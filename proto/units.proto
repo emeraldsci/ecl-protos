@@ -1,0 +1,143 @@
+syntax = "proto3";
+
+package units;
+
+// A single unit factor that consists of an SI prefix, a unit, and an exponent.
+// Note: "exponent" was originally an i8 in Rust; here, we use int32.
+message UnitFactor {
+  Prefix prefix = 1;
+  Unit unit = 2;
+  int32 exponent = 3;
+}
+
+// The SI (metric) prefix.
+enum Prefix {
+  // If unspecified, defaults to “None”
+  PREFIX_UNSPECIFIED = 0;
+  Femto = 1;
+  Pico = 2;
+  Nano = 3;
+  Micro = 4;
+  Milli = 5;
+  Centi = 6;
+  None = 7;
+  Kilo = 8;
+  Mega = 9;
+  Giga = 10;
+}
+
+// A measurement unit is one of the predefined base units or an independent (domain-specific) unit.
+message Unit {
+  oneof unit_value {
+    BaseUnit base_unit = 1;
+    IndependentUnit independent_unit = 2;
+  }
+}
+
+// All the conventional (base) units.
+enum BaseUnit {
+  BASE_UNIT_UNSPECIFIED = 0;
+  Unities = 1;
+  Percent = 2;
+  PartsPerBillion = 3;
+  PartsPerMillion = 4;
+  Revolutions = 5;
+  Bytes = 6;
+  USDollars = 7;
+  Amperes = 8;
+  Angstroms = 9;
+  AngularDegrees = 10;
+  Bars = 11;
+  Days = 12;
+  Celsius = 13;
+  Fahrenheit = 14;
+  Feet = 15;
+  Gallons = 16;
+  Grams = 17;
+  Hertz = 18;
+  Hours = 19;
+  Inches = 20;
+  Kelvins = 21;
+  Liters = 22;
+  Lumens = 23;
+  Meters = 24;
+  MillimetersOfMercury = 25;
+  Minutes = 26;
+  Molar = 27;
+  Moles = 28;
+  Months = 29;
+  Newtons = 30;
+  Ohms = 31;
+  Pascals = 32;
+  Pounds = 33;
+  PoundsForce = 34;
+  Seconds = 35;
+  Siemens = 36;
+  StandardAccelerationOfGravity = 37;
+  Teslas = 38;
+  ThermochemicalCalories = 39;
+  Torr = 40;
+  Volts = 41;
+  Watts = 42;
+  Weeks = 43;
+  Years = 44;
+}
+
+// Domain-specific units that cannot be converted to any other unit.
+enum IndependentUnit {
+  INDEPENDENT_UNIT_UNSPECIFIED = 0;
+  AbsorbanceUnit = 1;
+  AnisotropyUnits = 2;
+  ArbitraryUnits = 3;
+  PolarizationUnits = 4;
+  RelativeNephelometricUnits = 5;
+  RelativeFluorescenceUnits = 6;
+  RelativeLuminescenceUnits = 7;
+  MassPercent = 8;
+  Cells = 9;
+  Cycles = 10;
+  Events = 11;
+  BasePairs = 12;
+  Nucleotides = 13;
+  Pixels = 14;
+}
+
+// (Optional) Representation of unit dimensions.
+// This message contains exponents for a set of base dimensions.
+// Any field that is not explicitly set is assumed to be zero.
+message Dimensions {
+  int32 mass = 1;          // exponent for mass dimension
+  int32 length = 2;        // exponent for length dimension
+  int32 time = 3;          // exponent for time dimension
+  int32 angle = 4;         // exponent for angle dimension
+  int32 lumens_intensity = 5;  // exponent for luminous intensity
+  int32 information = 6;   // exponent for information (e.g., bytes)
+  int32 us_currency = 7;   // exponent for US dollars
+  int32 current = 8;       // exponent for electric current
+  int32 temp_diff = 9;     // exponent for temperature difference
+  int32 substance_amount = 10; // exponent for substance amount (moles)
+  int32 revolutions = 11;  // exponent for revolutions dimension
+}
+
+// Represents a temperature measurement.
+message Temperature {
+  // Decimal values can be represented as strings if high precision is required.
+  string value = 1;
+  TemperatureScale scale = 2;
+}
+
+// Represents the temperature scale.
+// When the type is "Kelvins", the included prefix gives the scale multiplier.
+message TemperatureScale {
+  TemperatureScaleType type = 1;
+  // Only applicable when type == Kelvins.
+  Prefix prefix = 2;
+
+    // Enumeration for the temperature scale type.
+    enum TemperatureScaleType {
+        TEMPERATURE_SCALE_UNSPECIFIED = 0;
+        Celsius = 1;
+        Fahrenheit = 2;
+        Kelvins = 3;
+    }  
+}

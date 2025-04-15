@@ -1,0 +1,336 @@
+syntax = "proto3";
+
+package grpc_astra;
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "units.proto"; // Update the path to the correct location of units.proto
+//Define the Astra service
+service Astra {
+    rpc Search (SearchRequest) returns (SearchResponse) {}
+}
+
+message SearchRequest {
+    TypeExpression types = 1;// SLLTypes to search
+    SearchClause search_clause = 2; // The filter conditions that the returned objects must meet
+    bool exclude_developer_objects = 3;
+    google.protobuf.UInt32Value max_items = 4;
+}
+
+message TypeExpression {
+    oneof type_expression {
+        TypeFilter single_type = 1; // Single type filter
+        LogicalExpression logical = 2; // Logical expression to combine multiple types
+    }
+
+    message TypeFilter {
+        string type = 1;       // Type ("Object" or "Model")
+        repeated SubtypeExpression subtypes = 2;    // List of subtypes
+    }
+    // Logical operation for combining type expressions
+    message LogicalExpression {
+        LogicalOperator operator = 1; // AND, OR, EXCEPT
+        repeated TypeExpression expressions = 2; // sub-expressions
+    }
+}
+
+message SubtypeExpression {
+    oneof subtype_expression {
+        string subtype = 1; // A single subtype filter
+        LogicalExpression logical = 2; // A logical expression to combine multiple subtypes
+    }
+
+    message LogicalExpression {
+        LogicalOperator operator = 1; // AND, OR, EXCEPT
+        repeated SubtypeExpression expressions = 2; // sub-expressions
+    }
+}
+
+enum LogicalOperator {
+    OR = 0;          // OR operation
+    EXCEPT = 1;      // EXCEPT (set difference) operation -- Except is essentially ButNot, i.e "We want this type but not that type"
+}
+
+// Filter clauses
+message SearchClause {
+    oneof clause {
+        // Trivially true clause
+        google.protobuf.Empty true_clause = 1;
+
+        // Trivially false clause
+        google.protobuf.Empty false_clause = 2;
+
+        // Negation of the enclosed clause
+        NotClause not_clause = 3;
+
+        // Conjunction (AND)
+        AndClause and_clause = 4;
+
+        // Disjunction (OR)
+        OrClause or_clause = 5;
+
+        // Single predicate
+        Predicate simple = 6;
+    }
+
+    // Negation
+    message NotClause {
+        SearchClause clause = 1;
+    }
+
+    // Conjunction (AND)
+    message AndClause {
+        repeated SearchClause clauses = 1;
+    }
+
+    // Disjunction (OR)
+    message OrClause {
+        repeated SearchClause clauses = 1;
+    }
+
+    // Predicate consisting of a function and its arguments
+    message Predicate {
+        PredicateArgument arg1 = 1;
+        PredicateArgument arg2 = 2;
+        Operator op = 3;      // Comparison operator
+         
+        message PredicateArgument {
+            oneof argument {
+                FieldPath field = 1; // Field name (e.g., "DeveloperObject")
+                Function function = 2; // Function to apply (e.g., "Length")
+                Value value = 3; // Value to compare against
+            }
+        }
+
+        message FieldPath {
+            repeated Segment segments = 1;
+
+            message Segment {
+                string name = 1;
+                optional Index indices = 2; 
+            }
+
+            message Index {
+                oneof spec {
+                    PartSpec one = 1;  // Multiple OR an indexed composite
+                    TwoPartSpec two = 2;  // Multiple and indexed composite
+                }
+            }
+
+            message PartSpec {
+                oneof part {
+                    All all = 1; // All entries in a Multiple field.
+                    int32 idx = 2; // A single element of a Multiple field
+                    Range range = 3; // A range of elements in a Multiple field.
+                }
+
+                message All{}
+            }
+
+            message TwoPartSpec {
+                PartSpec part = 1;
+                int32 idx = 2;
+            }
+        }
+
+        message Function {
+            FunctionOptions function = 1; // Function to apply (e.g., "Length")
+            PredicateArgument arg = 2; // Argument to the function
+
+            enum FunctionOptions {
+                LENGTH = 0;
+            }
+        }
+        
+        // Comparison operators
+        enum Operator {
+            EQUAL = 0;
+            NOT_EQUAL = 1;
+            GREATER_THAN = 2;
+            LESS_THAN = 3;
+            GREATER_THAN_OR_EQUAL = 4;
+            LESS_THAN_OR_EQUAL = 5;
+            IN = 6;
+            NOT_IN = 7;
+        }
+    }
+}
+
+// Represents a value in a predicate
+message Value {
+    oneof val {
+        PrimValue single = 1; // Single value
+        PrimList multiple = 2; // Multiple values
+        TypeExpression object = 3; // Object value
+    }
+}
+
+message PrimValue {
+    oneof prim {
+        string string_value = 1; // String representation
+        bool bool_value = 2;     // Boolean representation
+        int32 int_value = 3;     // Integer representation
+        double float_value = 4;  // Float representation
+        string expression = 5;   // Expression
+        google.protobuf.Timestamp date = 6; // Date representation
+        Quantity quantity = 7; // Quantity representation
+    }
+}
+
+message PrimList {
+    repeated PrimValue values = 1;
+}
+
+message Quantity {
+    double value = 1;
+    UnitExpr units = 2; // Unit of measurement
+}
+// Represents a complete unit expression as a product of factors.
+message UnitExpr {
+    // A list of factors that make up this unit expression.
+    // repeated UnitFactor factors = 1;
+}
+
+message Range {
+    int32 start = 1;
+    int32 end = 2;
+}
+
+// Response message for Search RPC
+message SearchResponse {
+    repeated SearchResult results = 1;    // List of search results
+    uint32 total_count = 2;              // Total number of results (useful for pagination)
+}
+
+// Individual search result
+message SearchResult {
+    string id = 1;                       // Unique identifier of the found object
+    string type = 2;                     // Type of the object
+}
+
+// ExceptYieldsEmptyError is emitted when no types in the candidate expression remain after subtracting the exclusion expression.
+message ExceptYieldsEmptyError {
+    // The candidate types expression.
+    string candidate_expr = 1;
+    // The exclusion types expression.
+    string exclusion_expr = 2;
+    // "Candidate '<candidate_expr>' is fully excluded by '<exclusion_expr>', yielding an empty set.
+    // Ensure the candidate set includes at least one type not in the exclusion set."
+    string reason = 3;
+}
+
+// NoFurtherSubtypesError is emitted when a requested subtyping operation
+// reaches its limit and no more refined subtypes exist.
+message NoFurtherSubtypesError {
+    // The original type specification provided.
+    string input_source = 1;
+    // The subtyping depth that was attempted.
+    uint32 depth = 2;
+    // The computed type expression (either the ancestor at depth - 1, or the root type)
+    // for which no further subtyping exists.
+    string target_expr = 3;
+    // "No further subtyping of '<target_expr>' exist."
+    string reason = 4;
+}
+
+// NoMatchingSubtypesError is emitted when no types matching the computed type expression exist.
+message NoMatchingSubtypesError {
+    // The original type specification.
+    string input_source = 1;
+    // The subtyping depth at which the error occurred.
+    uint32 depth = 2;
+    // The computed type expression (from ancestor_type) for which no matching types were found.
+    string target_expr = 3;
+    // "No types matching '<target_expr>' exist."
+    string reason = 4;
+}
+
+// ResolveError is emitted when an error occurs while resolving a predicate in the search clause.
+message ResolveError {
+    string reason = 1;
+}
+
+// ArgumentError is emitted when there is an issue with a function argument.
+message ArgumentError {
+    // The function in which the error occurred.
+    string in_function = 1;
+    // The position of the argument where the error occurred. (Empty if unknown)
+    string position = 2;
+    // The possible data types provided for the argument.
+    string argument = 3;
+    // The expected data type.
+    string expected_type = 4;
+    // The kind of error.
+    ArgumentErrorKind kind = 5;
+    string reason = 6;
+
+    // The kinds of argument error.
+    enum ArgumentErrorKind {
+        ARGUMENT_ERROR_KIND_UNSPECIFIED = 0;
+        /// Occurs when datatype of input is inconsistent with the expected type of argument.
+        ///
+        /// * `type mismatch in <LHS/RHS/arg-n> of <predicate>`
+        /// * primary clarification: `<LHS/RHS/arg-n> is a <type>, expecting a <type class>`
+        /// * (and clarification on field type, and clarification on type class)
+        TYPE_MISMATCH = 1;
+        /// Occurs when input could have multiple interpretations consistent with expected type of argument.
+        ///
+        /// * `unable to infer data type of <LHS/RHS/arg-n> in <predicate>` \n
+        /// * primary clarification `<LHS/RHS/arg-n> may be <types>, which are valid data types in this position`
+        TYPE_AMBIGUOUS = 2;
+    }
+}
+
+// TypeUnificationError is emitted when merging two sets of data types fails
+// due either to a complete mismatch or ambiguity.
+message TypeUnificationError {
+    // The function in which the error occurred.
+    string in_function = 1;
+    // Possible data types from the first argument.
+    string argument_lhs = 2;
+    // Possible data types from the second argument.
+    string argument_rhs = 3;
+    // The kind of error (mismatch vs. ambiguous).
+    TypeUnificationErrorKind kind = 4;
+    string reason = 5;
+
+    // Enum for the kind of type unification error.
+    enum TypeUnificationErrorKind {
+        TYPE_UNIFICATION_ERROR_KIND_UNSPECIFIED = 0;
+        TYPE_MISMATCH = 1;
+        TYPE_AMBIGUOUS = 2;
+    }
+}
+
+// DowncastError is emitted when downcasting from one data type to another fails.
+message DowncastError {
+    // The source data type (as represented in string format).
+    string source = 1;
+    // The target type to which the downcast was attempted.
+    string target = 2;
+    // "Failed to downcast value from type '<source>' to '<target>'. \
+    //  Please ensure that the source type is compatible with the target type.",
+    string reason = 3;
+}
+
+// EmptyFilterError describes an internal error where filtering produces no results.
+// It is used for both "no field paths" and "no field values" remaining.
+message EmptyFilterError {
+    // The data type used in the filtering operation.
+    string datatype = 1;
+    // The specific error kind.
+    EmptyFilterErrorKind kind = 2;
+    // "Internal error: no field paths/values remain after filtering on '<datatype>'."
+    string reason = 3;
+
+    // Enum to indicate the kind of empty filter error.
+    enum EmptyFilterErrorKind {
+        EMPTY_FILTER_ERROR_KIND_UNSPECIFIED = 0;
+        EMPTY_PATH = 1;
+        EMPTY_VALUE = 2;
+    }
+}
+
+message PostValidationError {
+    string reason = 1;
+}
