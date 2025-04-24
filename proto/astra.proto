@@ -183,13 +183,9 @@ message PrimList {
 
 message Quantity {
     double value = 1;
-    UnitExpr units = 2; // Unit of measurement
+    units.UnitExpr units = 2; // Units defined in units.proto
 }
-// Represents a complete unit expression as a product of factors.
-message UnitExpr {
-    // A list of factors that make up this unit expression.
-    // repeated UnitFactor factors = 1;
-}
+
 
 message Range {
     int32 start = 1;

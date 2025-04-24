@@ -1,6 +1,13 @@
 syntax = "proto3";
-
 package units;
+
+
+// Represents a complete unit expression as a product of factors.
+message UnitExpr {
+  // A list of factors that make up this unit expression.
+  repeated UnitFactor factors = 1;
+}
+
 
 // A single unit factor that consists of an SI prefix, a unit, and an exponent.
 // Note: "exponent" was originally an i8 in Rust; here, we use int32.
@@ -12,31 +19,24 @@ message UnitFactor {
 
 // The SI (metric) prefix.
 enum Prefix {
-  // If unspecified, defaults to “None”
-  PREFIX_UNSPECIFIED = 0;
+  None = 0;
   Femto = 1;
   Pico = 2;
   Nano = 3;
   Micro = 4;
   Milli = 5;
   Centi = 6;
-  None = 7;
-  Kilo = 8;
-  Mega = 9;
-  Giga = 10;
+  Kilo = 7;
+  Mega = 8;
+  Giga = 9;
 }
 
 // A measurement unit is one of the predefined base units or an independent (domain-specific) unit.
-message Unit {
-  oneof unit_value {
-    BaseUnit base_unit = 1;
-    IndependentUnit independent_unit = 2;
-  }
-}
+enum Unit {
+  UNIT_UNSPECIFIED = 0;
 
-// All the conventional (base) units.
-enum BaseUnit {
-  BASE_UNIT_UNSPECIFIED = 0;
+  // Base units (reserved 0-499)
+  // All the conventional (base) units that support conversion to other units.
   Unities = 1;
   Percent = 2;
   PartsPerBillion = 3;
@@ -81,25 +81,23 @@ enum BaseUnit {
   Watts = 42;
   Weeks = 43;
   Years = 44;
-}
 
-// Domain-specific units that cannot be converted to any other unit.
-enum IndependentUnit {
-  INDEPENDENT_UNIT_UNSPECIFIED = 0;
-  AbsorbanceUnit = 1;
-  AnisotropyUnits = 2;
-  ArbitraryUnits = 3;
-  PolarizationUnits = 4;
-  RelativeNephelometricUnits = 5;
-  RelativeFluorescenceUnits = 6;
-  RelativeLuminescenceUnits = 7;
-  MassPercent = 8;
-  Cells = 9;
-  Cycles = 10;
-  Events = 11;
-  BasePairs = 12;
-  Nucleotides = 13;
-  Pixels = 14;
+  // Independent units (reserved 500-999)
+  // Domain-specific units that cannot be converted to any other unit.
+  AbsorbanceUnit = 500;
+  AnisotropyUnits = 501;
+  ArbitraryUnits = 502;
+  PolarizationUnits = 503;
+  RelativeNephelometricUnits = 504;
+  RelativeFluorescenceUnits = 505;
+  RelativeLuminescenceUnits = 506;
+  MassPercent = 507;
+  Cells = 508;
+  Cycles = 509;
+  Events = 510;
+  BasePairs = 511;
+  Nucleotides = 512;
+  Pixels = 513;
 }
 
 // (Optional) Representation of unit dimensions.
@@ -135,9 +133,8 @@ message TemperatureScale {
 
     // Enumeration for the temperature scale type.
     enum TemperatureScaleType {
-        TEMPERATURE_SCALE_UNSPECIFIED = 0;
-        Celsius = 1;
-        Fahrenheit = 2;
-        Kelvins = 3;
+        Celsius = 0;
+        Fahrenheit = 1;
+        Kelvins = 2;
     }  
 }
