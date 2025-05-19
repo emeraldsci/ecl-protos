@@ -171,7 +171,7 @@ message PrimValue {
         bool bool_value = 2;     // Boolean representation
         int32 int_value = 3;     // Integer representation
         double float_value = 4;  // Float representation
-        string expression = 5;   // Expression
+        string variant = 5;      // Variant of an SLL Enum (for Expression fields)
         google.protobuf.Timestamp date = 6; // Date representation
         Quantity quantity = 7; // Quantity representation
     }
