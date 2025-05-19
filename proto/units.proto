@@ -81,6 +81,7 @@ enum Unit {
   Watts = 42;
   Weeks = 43;
   Years = 44;
+  Poise = 45;
 
   // Independent units (reserved 500-999)
   // Domain-specific units that cannot be converted to any other unit.
