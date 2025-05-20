@@ -107,7 +107,7 @@ message SearchClause {
 
             message Segment {
                 string name = 1;
-                optional Index indices = 2; 
+                Index indices = 2;
             }
 
             message Index {
