@@ -90,8 +90,8 @@ message SearchClause {
 
     // Predicate consisting of a function and its arguments
     message Predicate {
-        PredicateArgument arg1 = 1;
-        PredicateArgument arg2 = 2;
+        PredicateArgument lhs = 1;
+        PredicateArgument rhs = 2;
         Operator op = 3;      // Comparison operator
          
         message PredicateArgument {
