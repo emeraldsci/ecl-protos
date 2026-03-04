@@ -4,7 +4,8 @@ package grpc_astra;
 import "google/protobuf/wrappers.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
-import "units.proto"; // Update the path to the correct location of units.proto
+import "units.proto";
+
 //Define the Astra service
 service Astra {
     rpc Search (SearchRequest) returns (SearchResponse) {}
@@ -158,27 +159,28 @@ message SearchClause {
 
 // Represents a value in a predicate
 message Value {
-    oneof val {
-        PrimValue single = 1; // Single value
-        PrimList multiple = 2; // Multiple values
+    oneof value {
+        Scalar single = 1; // Single value
+        List multiple = 2; // Multiple values
         TypeExpression object = 3; // Object value
     }
 }
 
-message PrimValue {
-    oneof prim {
-        string string_value = 1; // String representation
-        bool bool_value = 2;     // Boolean representation
-        int32 int_value = 3;     // Integer representation
-        double float_value = 4;  // Float representation
+message Scalar {
+    oneof scalar {
+        string string = 1; // String representation
+        bool bool = 2;     // Boolean representation
+        int64 int = 3;     // Integer representation
+        double float = 4;  // Float representation
         string variant = 5;      // Variant of an SLL Enum (for Expression fields)
         google.protobuf.Timestamp date = 6; // Date representation
         Quantity quantity = 7; // Quantity representation
+        string raw_string = 8; // raw string representation (for raw string values from JSON)
     }
 }
 
-message PrimList {
-    repeated PrimValue values = 1;
+message List {
+    repeated Scalar values = 1;
 }
 
 message Quantity {
