@@ -1,11 +1,11 @@
-`ecl-protos` is a Git repo hosting shared proto files, designed to be included as a Git submodule in downstream projects. It is important to keep the files in this folder in sync with the GitHub repo.
+`ecl-protos` is a Git repo hosting shared proto files, designed to be included as a Git submodule in ECL codebases.
 
-To initialize git submodule after the repo has been cloned:
+To initialize the git submodule after the upstream repo has been cloned:
 ```shell
 git submodule update --init --recursive
 ```
 
-To update submodule to latest from root project repo:
+To update the git submodule to latest from the upstream repo:
 ```shell
 git pull --recurse-submodules
 ```
