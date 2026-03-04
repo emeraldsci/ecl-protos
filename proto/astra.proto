@@ -159,15 +159,15 @@ message SearchClause {
 
 // Represents a value in a predicate
 message Value {
-    oneof val {
-        PrimValue single = 1; // Single value
-        PrimList multiple = 2; // Multiple values
+    oneof value {
+        Scalar single = 1; // Single value
+        List multiple = 2; // Multiple values
         TypeExpression object = 3; // Object value
     }
 }
 
-message PrimValue {
-    oneof prim {
+message Scalar {
+    oneof scalar {
         string string = 1; // String representation
         bool bool = 2;     // Boolean representation
         int64 int = 3;     // Integer representation
@@ -179,8 +179,8 @@ message PrimValue {
     }
 }
 
-message PrimList {
-    repeated PrimValue values = 1;
+message List {
+    repeated Scalar values = 1;
 }
 
 message Quantity {
